@@ -1,15 +1,19 @@
-<?
-	$_type = $_GET['type'];
-	include("option.php");
-	mysqlConnect();
-	$sql = "SELECT * FROM type";
-	$result = mysql_query($sql);
+<?php
+	$host  = "127.0.0.1";
+	$pass  = "";//管理者密碼
+	$user  = "emagu";
+	$db = "sandbox";
+	$port = 3306;
+	$connect = mysqli_connect($host, $user, $pass, $db, $port)or die(mysql_error());
+	mysqli_query($connect,"SET CHARACTER SET UTF8");
+	$query  = "SELECT * FROM type";
+	$result = mysqli_query($connect, $query);
 	$data = Array();
-	while($row = mysql_fetch_row($result)){
+	while($row = mysqli_fetch_row($result)){
 		$Item = Array();
-		$sql = "SELECT * FROM model where type = '$row[0]'";
-		$res = mysql_query($sql);
-		while($r = mysql_fetch_assoc($res)){
+		$query = "SELECT * FROM model where type = '$row[0]'";
+		$res = mysqli_query($connect, $query);
+		while($r = mysqli_fetch_assoc($res)){
 			array_push($Item,$r);
 		}
 		$type = Array("type"=>$row[0],"name"=>$row[1],"Data"=>$Item);

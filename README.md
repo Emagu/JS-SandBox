@@ -16,5 +16,5 @@
 
 7.  JSON編碼支援(可以將專案轉換成JSON
 
-測試網站:https://sandbox-emagu-1.c9users.io/SandBox
+測試網站:https://sandbox-emagu-1.c9users.io/Sandbox
 

@@ -107,6 +107,19 @@
 						SelectObj.rotation.y = Math.PI * (parseInt(control.PosR.value)/180);
 						render();
 					});
+					//牆體編輯事件
+					control.PosXC.addEventListener("change",function(){
+						ChangeWall(parseInt(control.PosXC.value),SelectObj.Model.Y,SelectObj.Model.Z);
+						render();
+					});
+					control.PosYC.addEventListener("change",function(){
+						ChangeWall(SelectObj.Model.X,parseInt(control.PosYC.value),SelectObj.Model.Z);
+						render();
+					});
+					control.PosZC.addEventListener("change",function(){
+						ChangeWall(SelectObj.Model.X,SelectObj.Model.Y,parseInt(control.PosZC.value));
+						render();
+					});
 				container.appendChild(control.a);
 				//測試欄
 				var info = document.createElement( 'div' );
@@ -251,6 +264,21 @@
 					container.style.cursor = "none";
 				});
 			}
+			function ChangeWall(x,y,z){
+				//箱子描繪
+				var geometry = new THREE.BoxGeometry( x, y, z );
+				var material = SelectObj.material;
+				voxel = new Wall(geometry,material,SelectObj.Model.Name,SelectObj.Model.Type,x,y,z);/*global Wall 實作於Wall.js*/
+				var Pos = new THREE.Vector3();
+				Pos.copy(SelectObj.position);
+				voxel.addToScene(Pos);
+				voxel.mesh.material.opacity = 0.5;
+				scene.remove(SelectObj);
+				objects.splice(objects.indexOf(SelectObj),1);
+				scene.add( voxel.mesh );
+				objects.push( voxel.mesh );
+				SelectObj = voxel.mesh;
+			}
 			
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
@@ -300,6 +328,12 @@
 							control.PosY.value = SelectObj.position.y;
 							control.PosZ.value = SelectObj.position.z;
 							control.PosR.value = SelectObj.rotation.y;
+							if(SelectObj.Model.Type == 0){
+								control.SelectWall();
+								control.PosXC.value = SelectObj.Model.X;
+								control.PosYC.value = SelectObj.Model.Y;
+								control.PosZC.value = SelectObj.Model.Z;
+							}
 							document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
 							document.removeEventListener( 'mousedown', onDocumentMouseDown, false );
 							document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -402,3 +436,4 @@
 		</script>
 	</body>
 </html>
+

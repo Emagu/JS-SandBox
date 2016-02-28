@@ -116,7 +116,7 @@ function Control(){
 			YCLabel.appendChild(this.PosYC);
 			//寬
 			var ZCLabel = document.createElement("P");
-			ZCLabel.appendChild(document.createTextNode("旋轉:"));
+			ZCLabel.appendChild(document.createTextNode("寬:"));
 			this.PosZC = document.createElement("INPUT");
 			this.PosZC.setAttribute("type", "number");
 			this.PosZC.setAttribute("max", "500");

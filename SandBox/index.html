@@ -8,12 +8,14 @@
 		<script src="three.js/build/three.min.js"></script>
 		<script src="three.js/examples/js/loaders/OBJLoader.js"></script>
 		<script src="three.js/examples/js/loaders/MTLLoader.js"></script>
+		<script src="three.js/examples/js/loaders/DDSLoader.js"></script>
 		<script src="three.js/examples/js/controls/OrbitControls.js"></script>
 		<script src="js/ajax.js"></script>
 		<script src="js/Menu.js"></script>
 		<script src="js/control.js"></script>
 		<script src="js/ToolBar.js"></script>
 		<script src="js/Wall.js"></script>
+		<script src="js/Model.js"></script>
 		<!-- 以下為畫面設定 -->
 		<script>
 			var container,control,menu,toolbar,
@@ -24,9 +26,7 @@
 			var size = 500, step = 10;
 			var onMouseDownPosition,onMouseDownTheta = 0,onMouseDownPhi = 45,
 			radious = 1600, theta = 0,  phi = 45;
-			var model,tex,cubex=0,cubey=0,cubez=0;
-			var objects,ModelData,
-			CanDo = false,HaveSelect=false,SelectObj=null;
+			var objects,ModelData,SelectObj=null;
 			init();
 			render();
 			function init() {
@@ -72,7 +72,6 @@
 						scene.remove(SelectObj);
 						objects.splice(objects.indexOf(SelectObj),1);
 						SelectObj=null;
-						HaveSelect = false;
 						control.a.style.display = "none";
 						render();
 						document.addEventListener( 'mousemove', onDocumentMouseMove, false );
@@ -81,8 +80,12 @@
 					});
 					//取消選取事件
 					control.c.addEventListener("click",function(){
-						SelectObj.material.opacity = 1;
-						HaveSelect = false;
+						if(SelectObj.Model.Type==0) SelectObj.material.opacity = 1;
+						else{
+							SelectObj.traverse( function( node ) {
+								if( node.material ) node.material.opacity = 1;
+							} );
+						}
 						SelectObj = null;
 						control.a.style.display = "none";
 						document.addEventListener( 'mousemove', onDocumentMouseMove, false );
@@ -197,8 +200,10 @@
 			function SetMenuItem(type) {
 				function ItemClick(Item,data,type){
 					Item.addEventListener("click",function(){
-						if(type==0) setWall(data.NO,data.X,data.Y,data.Z,data.tex,type);
-						else setObj();
+						if(!rollOverMesh){
+							if(type==0) setWall(data.NO,data.X,data.Y,data.Z,data.tex,type);
+							else setObj(data.NO,data.X,data.Y,data.Z,data.tex,type);
+						}
 					});
 				}
 				var Data = ModelData[type].Data;
@@ -250,6 +255,7 @@
 				DivScroll.style.height = "0px";
 			}
 			
+			//牆體有關
 			function setWall(NO,x,y,z,tex,type){
 				//箱子描繪
 				var geometry = new THREE.BoxGeometry( x, y, z );
@@ -280,10 +286,46 @@
 				SelectObj = voxel.mesh;
 			}
 			
+			//模型有關
+			function setObj(NO,x,y,z,tex,type){
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+				var onError = function ( xhr ) { };
+				THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader() );
+				var mtlLoader = new THREE.MTLLoader();
+				mtlLoader.setBaseUrl( 'model/obj/'+NO+'/' );
+				mtlLoader.setPath( 'model/obj/'+NO+'/' );
+				mtlLoader.load( tex + '.mtl', function( materials ) {
+					materials.preload();
+					var objLoader = new THREE.OBJLoader();
+					objLoader.setMaterials( materials );
+					objLoader.setPath( 'model/obj/'+NO+'/' );
+					objLoader.load( NO + '.obj', function ( object ) {
+						object.traverse( function( node ) {
+						    if( node.material ) {
+						        node.material.opacity = 0.5;
+						        node.material.transparent = true;
+						    }
+						} );
+						voxel = new Model(object.clone(),NO,type,x,y,z);/*global Model 實作於Model.js*/
+						rollOverMesh = object.clone();
+						rollOverMesh.name = "rollOverMesh";
+						scene.add( rollOverMesh );
+						container.style.cursor = "none";
+					}, onProgress, onError );
+
+				});
+			}
+			
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				render();
 			}
 			function onDocumentMouseMove( event ) {
 				if(isMouseDown){
@@ -315,24 +357,28 @@
 				if(menu.a.style.width=="20%") mouse.set( ( event.clientX / (window.innerWidth*1.2) )*2-1.2, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				else mouse.set( ( event.clientX / (window.innerWidth) ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				raycaster.setFromCamera( mouse, camera );
-				var intersects = raycaster.intersectObjects( objects );
+				var intersects = raycaster.intersectObjects( objects ,true);
 				if ( intersects.length > 0 ) {
-					var intersect = intersects[ 0 ];
-					if(!rollOverMesh){
+					var intersect = intersects[0];
+					if(!rollOverMesh && !SelectObj){
 						if(intersect.object != plane){
 							control.a.style.display = "";
-							HaveSelect = true;
-							SelectObj = intersect.object;
-							SelectObj.material.opacity = 0.5;
+							if(!intersect.object.Model) SelectObj = intersect.object.parent;
+							else SelectObj = intersect.object;
 							control.PosX.value = SelectObj.position.x;
 							control.PosY.value = SelectObj.position.y;
 							control.PosZ.value = SelectObj.position.z;
 							control.PosR.value = SelectObj.rotation.y;
 							if(SelectObj.Model.Type == 0){
 								control.SelectWall();
+								SelectObj.material.opacity = 0.5;
 								control.PosXC.value = SelectObj.Model.X;
 								control.PosYC.value = SelectObj.Model.Y;
 								control.PosZC.value = SelectObj.Model.Z;
+							}else{
+								SelectObj.traverse( function( node ) {
+									if( node.material ) node.material.opacity = 0.5;
+								} );
 							}
 							document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
 							document.removeEventListener( 'mousedown', onDocumentMouseDown, false );
@@ -343,6 +389,7 @@
 						Pos.copy( intersect.point ).add( intersect.face.normal );
 						Pos.divideScalar( step ).floor().multiplyScalar( step ).addScalar( step/2 );
 						voxel.addToScene(Pos);
+						console.log(voxel.mesh);
 						scene.add( voxel.mesh );
 						objects.push( voxel.mesh );
 						if(scene.getObjectByName( "rollOverMesh", true )){

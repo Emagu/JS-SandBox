@@ -3,15 +3,6 @@
 	<head>
 		<title>線上沙盒系統</title>
 		<meta charset="utf-8">
-		<style>
-			body {
-				font-family: Monospace;
-				background-color: #f0f0f0;
-				margin: 0px;
-				overflow: hidden;
-			}
-			#oldie { background-color: #ddd !important }
-		</style>
 	</head>
 	<body>
 		<script src="three.js/build/three.min.js"></script>
@@ -46,31 +37,18 @@
 					document.body.removeChild(document.body.firstChild);
 				}
 				//場景
-				scene = new THREE.Scene();
+				scene = new THREE.Scene();/*global THREE*/
 				objects = new Array;//物件陣列
 				//菜單
-				GetModel();
-				menu = new Menu();
+				GetModel();/*global GetModel 呼叫AJAX*/
+				menu = new Menu();/*global Menu 實作於Menu.js*/
 				var menulist = menu.a;
 				var menulistButton = menu.b;
 				menulistButton.addEventListener("click",function(){
 					if(menulist.style.width == "2%"){
-						menulistButton.innerHTML = "點<br>我<br>隱<br>藏<br>!";
-						menulist.style.width = "20%";
-						menulistButton.style.width = "20%";
-						container.style.left = menulist.style.width;
-						container.style.width = (100 - parseInt(menulist.style.width.replace('%',''))) + "%";
+						menu.OpenList(container);
 						SetMenuType();
-					}else{
-						menulistButton.innerHTML = "點<br>我<br>展<br>開<br>!";
-						while (menulist.firstChild) {
-							menulist.removeChild(menulist.firstChild);
-						}
-						menulist.style.width = "2%";
-						menulistButton.style.width = "2%";
-						container.style.left = menulist.style.width;
-						container.style.width = (100 - parseInt(menulist.style.width.replace('%',''))) + "%";
-					}
+					}else menu.CloseList(container);
 				});
 				document.body.appendChild(menulist);
 				document.body.appendChild(menulistButton);
@@ -81,7 +59,7 @@
 				container.style.left = menulist.style.width;
 				document.body.appendChild(container);
 				//工具列初始化
-				toolbar = new ToolBar(95,0);
+				toolbar = new ToolBar(95,0);/*global ToolBar 實作於ToolBar.js*/
 				toolbar.b.addEventListener("click",function(){
 					DataOutPut();
 				});
@@ -197,6 +175,7 @@
 
 			}
 			function GetModelData(){
+				/*global request 實作於 ajax.js*/
 				if (request.readyState == 4) {//完成狀態有好幾種，4代表資料傳回完成
 					var data = request.responseText;//取得傳回的資料存在變數中
 					ModelData = JSON.parse(data);//解出JSON陣列
@@ -217,16 +196,7 @@
 				Div.style.backgroundColor = "#FFFCDF";
 				var menu = document.getElementById(Div.parentNode.id);//選單
 				for(var i=0;i<Data.length;i++){
-					var Item = document.createElement('div');
-					Item.style.width = "98%";
-					Item.style.left = "1%";
-					Item.style.height = ((100/ItemCount)-4)+"%";
-					Item.style.top = (((100/ItemCount)-2)*i+1)+"%";
-					Item.style.position = 'absolute';
-					Item.style.backgroundImage = "url('model/icon/"+Data[i].NO+".png')";
-					Item.style.backgroundRepeat = "no-repeat";
-					Item.style.backgroundSize = "100% 100%";
-					Item.id = "menuItem_"+i;
+					var Item = new MenuItem(i,ItemCount,Data[i].NO);/*global MenuItem 實作於Menu.js*/
 					ItemClick(Item,Data[i],type);
 					Div.appendChild(Item);
 				}
@@ -238,8 +208,18 @@
 				}
 			}
 			function SetMenuType() {
+				function TypeClick(Div,DivScroll,i){
+					Div.addEventListener("click",function(){
+						if(DivScroll.childElementCount==0)SetMenuItem(i);//未展開
+						else DelMenuItem(i,DivScroll);//已展開
+					});
+				}
 				for (var i = 0; i < ModelData.length; i++) {//實作陣列
-					menu.NewType(ModelData[i].name,i);
+					var Div = new MenuType(ModelData[i].name,i)/*global MenuType 實作於 Menu.js*/
+					var DivScroll = new MenuTypeScroll(i)/*global MenuTypeScroll 實作於 Menu.js*/
+					TypeClick(Div,DivScroll,i);//增加按鈕事件
+					menu.a.appendChild(Div);
+					menu.a.appendChild(DivScroll);
 				}
 			}
 			function DelMenuItem(i,DivScroll) {

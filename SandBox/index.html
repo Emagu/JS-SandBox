@@ -8,26 +8,24 @@
 		<script src="three.js/build/three.min.js"></script>
 		<script src="three.js/examples/js/loaders/OBJLoader.js"></script>
 		<script src="three.js/examples/js/loaders/MTLLoader.js"></script>
-		<script src="three.js/examples/js/loaders/OBJMTLLoader.js"></script>
 		<script src="three.js/examples/js/controls/OrbitControls.js"></script>
 		<script src="js/ajax.js"></script>
 		<script src="js/Menu.js"></script>
 		<script src="js/control.js"></script>
 		<script src="js/ToolBar.js"></script>
+		<script src="js/Wall.js"></script>
 		<!-- 以下為畫面設定 -->
 		<script>
 			var container,control,menu,toolbar,
 			camera,scene,renderer;
 			var plane;
 			var mouse, raycaster, isShiftDown = false,isMouseDown=false,isMouseMove=false;
-			var rollOverMesh,rollOverMaterial;
-			var cubeGeo, cubeMaterial,cubeName,cubetype;
+			var rollOverMesh,voxel;
 			var size = 500, step = 10;
-			var objects;
 			var onMouseDownPosition,onMouseDownTheta = 0,onMouseDownPhi = 45,
 			radious = 1600, theta = 0,  phi = 45;
 			var model,tex,cubex=0,cubey=0,cubez=0;
-			var ModelData = [],
+			var objects,ModelData,
 			CanDo = false,HaveSelect=false,SelectObj=null;
 			init();
 			render();
@@ -68,14 +66,14 @@
 				});
 				container.appendChild(toolbar.a);
 				//控制台初始化
-				control = new Control();
+				control = new Control();/*global Control 實作於Control.js*/
 					//移除按鈕事件
 					control.b.addEventListener("click",function(){
 						scene.remove(SelectObj);
 						objects.splice(objects.indexOf(SelectObj),1);
 						SelectObj=null;
 						HaveSelect = false;
-						control.a.style.top = (window.innerHeight+500) + "px";
+						control.a.style.display = "none";
 						render();
 						document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 						document.addEventListener( 'mousedown', onDocumentMouseDown, false );
@@ -86,10 +84,11 @@
 						SelectObj.material.opacity = 1;
 						HaveSelect = false;
 						SelectObj = null;
-						control.a.style.top = (window.innerHeight+500) + "px";
+						control.a.style.display = "none";
 						document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 						document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 						document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+						render();
 					});
 					//可移動按鈕事件
 					control.PosX.addEventListener("change",function(){
@@ -174,6 +173,7 @@
 				window.addEventListener( 'resize', onWindowResize, false );
 
 			}
+			//Menu 相關
 			function GetModelData(){
 				/*global request 實作於 ajax.js*/
 				if (request.readyState == 4) {//完成狀態有好幾種，4代表資料傳回完成
@@ -184,7 +184,8 @@
 			function SetMenuItem(type) {
 				function ItemClick(Item,data,type){
 					Item.addEventListener("click",function(){
-						setCube(data.NO,data.X,data.Y,data.Z,data.tex,type);
+						if(type==0) setWall(data.NO,data.X,data.Y,data.Z,data.tex,type);
+						else setObj();
 					});
 				}
 				var Data = ModelData[type].Data;
@@ -235,34 +236,22 @@
 				}
 				DivScroll.style.height = "0px";
 			}
-			function CubePos(Pos,x,y,z){
-				if(((x/2)%10)==0) Pos.x += 5;
-				if(((z/2)%10)==0) Pos.z += 5;
-				if(((y/2)%10)!=0) Pos.y -= 5;
-				Pos.y += y/2;
-				return Pos;
-			}
-			function setCube(model,x,y,z,tex,type){
+			
+			function setWall(NO,x,y,z,tex,type){
 				//箱子描繪
-				cubetype = type;
-				cubeName = model;
-				cubeGeo = new THREE.BoxGeometry( x, y, z );
-				cubeMaterial = new THREE.MeshLambertMaterial( { color: 0xDF1F1F, map: THREE.ImageUtils.loadTexture("model/tex/"+tex+".png")});
-				cubex = x;
-				cubey = y;
-				cubez = z;
-				//擺放箱子透明
-				if(scene.getObjectByName( "CubeMesh", true )){
-					scene.remove(scene.getObjectByName( "CubeMesh", true ));
-				}
-				rollOverMaterial = new THREE.MeshLambertMaterial( { color: 0xDF1F1F, transparent: true, opacity: 0.5, map: THREE.ImageUtils.loadTexture("model/tex/"+tex+".png")});
-				rollOverMesh = new THREE.Mesh( cubeGeo, rollOverMaterial );
-				rollOverMesh.position = CubePos(rollOverMesh.position,x,y,z);
-				rollOverMesh.name = "CubeMesh";
-				scene.add(rollOverMesh);
-				CanDo = true;
-				container.style.cursor = "none";
+				var geometry = new THREE.BoxGeometry( x, y, z );
+				var textureloader = new THREE.TextureLoader();
+				textureloader.load("model/tex/"+tex+".png",function(texture){
+					var material = new THREE.MeshLambertMaterial( { color: 0xDF1F1F, map: texture, transparent: true, opacity: 0.5});
+					voxel = new Wall(geometry,material,NO,type,x,y,z);/*global Wall 實作於Wall.js*/
+					//擺放箱子透明
+					rollOverMesh = new THREE.Mesh( geometry, material );
+					rollOverMesh.name = "rollOverMesh";
+					scene.add(rollOverMesh);
+					container.style.cursor = "none";
+				});
 			}
+			
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
@@ -273,11 +262,6 @@
 					isMouseMove = true;
 				}else{
 					if(rollOverMesh){
-						if(!CanDo){
-							rollOverMesh.position.y = 2000;
-							render();
-							return;
-						}
 						event.preventDefault();
 						if(menu.a.style.width=="20%") mouse.set( ( event.clientX / (window.innerWidth*1.2) )*2-1.2, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 						else mouse.set( ( event.clientX / (window.innerWidth) ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
@@ -286,7 +270,8 @@
 						if ( intersects.length > 0 ) {
 							var intersect = intersects[ 0 ];
 							rollOverMesh.position.copy( intersect.point ).add( intersect.face.normal );
-							rollOverMesh.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 50/2 );
+							rollOverMesh.position.divideScalar( step ).floor().multiplyScalar( step ).addScalar( step/2 );
+							if(rollOverMesh.position.y<(voxel.mesh.Model.Y/2)) rollOverMesh.position.y = (voxel.mesh.Model.Y/2);
 						}
 						render();
 					}
@@ -299,41 +284,38 @@
 					return;
 				}
 				event.preventDefault();
-				//alert(window.innerWidth);
 				if(menu.a.style.width=="20%") mouse.set( ( event.clientX / (window.innerWidth*1.2) )*2-1.2, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				else mouse.set( ( event.clientX / (window.innerWidth) ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
 				raycaster.setFromCamera( mouse, camera );
 				var intersects = raycaster.intersectObjects( objects );
 				if ( intersects.length > 0 ) {
 					var intersect = intersects[ 0 ];
-					if(!CanDo){
+					if(!rollOverMesh){
 						if(intersect.object != plane){
-							if(SelectObj) SelectObj.material.opacity = 1;
-							control.a.style.top = '0px';
-							control.a.style.left = "0px";
+							control.a.style.display = "";
 							HaveSelect = true;
 							SelectObj = intersect.object;
 							SelectObj.material.opacity = 0.5;
 							control.PosX.value = SelectObj.position.x;
 							control.PosY.value = SelectObj.position.y;
 							control.PosZ.value = SelectObj.position.z;
-							control.PosR.value = "0";
+							control.PosR.value = SelectObj.rotation.y;
 							document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
 							document.removeEventListener( 'mousedown', onDocumentMouseDown, false );
 							document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
 						}
 					} else {
-						var voxel = new THREE.Mesh( cubeGeo, cubeMaterial );
-						voxel.material.transparent = true;
-						voxel.position.copy( intersect.point ).add( intersect.face.normal );
-						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 50/2 );
-						voxel.overdraw = true;
-						voxel.name = cubeName;
-						voxel.typeID = cubetype;
-						scene.add( voxel );
-						CanDo = false;
-						objects.push( voxel );
+						var Pos = new THREE.Vector3();
+						Pos.copy( intersect.point ).add( intersect.face.normal );
+						Pos.divideScalar( step ).floor().multiplyScalar( step ).addScalar( step/2 );
+						voxel.addToScene(Pos);
+						scene.add( voxel.mesh );
+						objects.push( voxel.mesh );
+						if(scene.getObjectByName( "rollOverMesh", true )){
+							scene.remove(scene.getObjectByName( "rollOverMesh", true ));
+						}
 						container.style.cursor = "pointer";
+						rollOverMesh = null;
 					}
 					render();
 				}
@@ -394,7 +376,7 @@
 							var Data = ModelData[ObjectData[i].typeID].Data;
 							for(var j=0;j<Data.length;j++){
 								if(Data[j].NO == ObjectData[i].name){//找出目標開始新增
-									setCube(Data[j].NO,Data[j].X,Data[j].Y,Data[j].Z,Data[j].tex,ObjectData[i].typeID);
+									setWall(Data[j].NO,Data[j].X,Data[j].Y,Data[j].Z,Data[j].tex,ObjectData[i].typeID);
 									var voxel = new THREE.Mesh( cubeGeo, cubeMaterial );
 									voxel.material.transparent = true;
 									voxel.position.x = ObjectData[i].position.x;

@@ -2,13 +2,13 @@ function Control(){
 	//載體
 	this.a = document.createElement( 'div' );
 	this.a.style.position = 'absolute';
-	this.a.style.top = (window.innerHeight+500) + "px";
+	this.a.style.top = "0px";
 	this.a.style.width = "250px";
 	this.a.style.height = "320px";
 	this.a.style.backgroundColor = "#DDDCDC";
 	this.a.style.textAlign = 'center';
 	this.a.id = "Control";
-	
+	this.a.style.display = "none";
 	//功能按鈕
 		//標題
 		var worktitle = document.createElement("P");

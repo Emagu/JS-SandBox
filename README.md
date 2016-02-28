@@ -16,5 +16,5 @@
 
 7.  編輯完成檔案下載使用JSON編碼，存成...TXT(TAT好沒格調
 
-測試網站:https://sandbox-emagu-1.c9users.io/JS-SandBox/SandBox/ (PM 1:00~AM1:00 可以測試)
+測試網站:https://js-sandbox-emagu.c9users.io/SandBox/ (PM 1:00~AM1:00 可以測試)
 

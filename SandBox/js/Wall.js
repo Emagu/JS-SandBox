@@ -1,4 +1,4 @@
-function Wall(geometry,material,name,type,x,y,z){
+function Wall(geometry,material,name,type,x,y,z,tex){
     this.mesh = new THREE.Mesh( geometry, material );/*global THREE*/
     this.mesh.overdraw = true;
     this.mesh.Model = new Object();
@@ -7,6 +7,7 @@ function Wall(geometry,material,name,type,x,y,z){
     this.mesh.Model.X = x;//模型寬度
     this.mesh.Model.Y = y;//模型高度
     this.mesh.Model.Z = z;//模型長度
+    this.mesh.Model.Tex = tex;//模型材質
  
     this.addToScene = function(Pos){
         if(Pos.y<(this.mesh.Model.Y/2)) Pos.y = (this.mesh.Model.Y/2);

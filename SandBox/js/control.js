@@ -141,5 +141,12 @@ function Control(){
 			PosL.appendChild(XCLabel);
 			PosL.appendChild(YCLabel);
 			PosR.appendChild(ZCLabel);
+			this.a.style.height = "320px";
+		};
+		this.NotSelectWall = function(){
+			PosL.removeChild(XCLabel);
+			PosL.removeChild(YCLabel);
+			PosR.removeChild(ZCLabel);
+			this.a.style.height = "240px";
 		};
 }

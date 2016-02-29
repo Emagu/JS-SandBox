@@ -10,6 +10,7 @@
 		<script src="three.js/examples/js/loaders/MTLLoader.js"></script>
 		<script src="three.js/examples/js/loaders/DDSLoader.js"></script>
 		<script src="three.js/examples/js/controls/OrbitControls.js"></script>
+		<script src="three.js/examples/js/controls/FirstPersonControls.js"></script>
 		<script src="js/ajax.js"></script>
 		<script src="js/Menu.js"></script>
 		<script src="js/control.js"></script>
@@ -24,9 +25,9 @@
 			var mouse, raycaster, isShiftDown = false,isMouseDown=false,isMouseMove=false;
 			var rollOverMesh,voxel;
 			var size = 500, step = 10;
-			var onMouseDownPosition,onMouseDownTheta = 0,onMouseDownPhi = 45,
-			radious = 1600, theta = 0,  phi = 45;
 			var objects,ModelData,SelectObj=null;
+			var ScopeMode = 3;
+			var camControls,clock = new THREE.Clock();;
 			init();
 			render();
 			function init() {
@@ -63,6 +64,35 @@
 				});
 				toolbar.c.addEventListener("change",function(){
 					DataInPut();
+				});
+				toolbar.d.addEventListener("click",function(){
+					if(ScopeMode == 3) {
+						controls.dispose();
+						camera.position.set(500,500,500);
+						camera.lookAt( new THREE.Vector3(100,0,0) );
+						camControls = new THREE.FirstPersonControls(camera);
+				        camControls.lookSpeed = 0.2;
+				        camControls.movementSpeed = 20;
+				        camControls.noFly = true;
+				        camControls.lookVertical = true;
+				        camControls.constrainVertical = true;
+				        camControls.verticalMin = 1.0;
+				        camControls.verticalMax = 2.0;
+				        camControls.lon = -150;
+				        camControls.lat = 120;
+						render();
+						ScopeMode = 1;
+					}else{
+						console.log(ScopeMode);
+						camera.position.set(500,500,500);
+						controls = new THREE.OrbitControls( camera, renderer.domElement );
+						controls.addEventListener( 'change', render );
+						controls.target.set( 0, 1.2, 2 );
+						controls.maxDistance = 5000;
+						controls.maxZoom = 5000;
+						controls.update();	
+						ScopeMode = 3;
+					} 
 				});
 				container.appendChild(toolbar.a);
 				//控制台初始化
@@ -127,19 +157,10 @@
 						render();
 					});
 				container.appendChild(control.a);
-				//測試欄
-				var info = document.createElement( 'div' );
-				info.style.position = 'absolute';
-				info.style.top = '5px';
-				info.style.width = '100%';
-				info.style.textAlign = 'center';
-				info.id = "info";
-				info.innerHTML = 'Massage:';
-				container.appendChild( info );
 				//攝影機
 				camera = new THREE.PerspectiveCamera( 50, parseInt(container.style.width.replace('%',''))/100*window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.set( 500, 500, 500 );
-				camera.lookAt( new THREE.Vector3() );
+				camera.lookAt( new THREE.Vector3(0,0,0) );
 				scene.add(camera);
 				//線條描繪
 				var geometry = new THREE.Geometry();
@@ -181,7 +202,11 @@
 				var controls = new THREE.OrbitControls( camera, renderer.domElement );
 				controls.addEventListener( 'change', render );
 				controls.target.set( 0, 1.2, 2 );
+				controls.maxDistance = 5000;
+				controls.maxZoom = 5000;
 				controls.update();
+				
+				
 				
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
@@ -203,23 +228,27 @@
 			function SetMenuItem(type) {
 				function ItemClick(Item,data,type){
 					Item.addEventListener("click",function(){
-						if(!rollOverMesh){
-							if(type==0) setWall(data.NO,data.X,data.Y,data.Z,data.tex,type);
-							else setObj(data.NO,data.X,data.Y,data.Z,data.tex,type);
+						if(!rollOverMesh && !SelectObj){
+							if(type==0) setWall(data[0],data[1],data[2],data[3],type);
+							else setObj(data[0],data[1],data[2],data[3],type);
 						}
 					});
 				}
-				var Data = ModelData[type].Data;
-				var ItemCount = Data.length;//共幾項
+				var ModelAllArray = ModelData["Model"];
+				var ModelSelfArray = new Array;
+				for(var i=0;i<ModelAllArray.length;i++){
+					if(ModelAllArray[i][4]==(type+1)) ModelSelfArray.push(ModelAllArray[i]);
+				}
+				var ItemCount = ModelSelfArray.length;//共幾項
 				if(ItemCount>5) ItemCount = 5;//大於5項時顯示5項
 				var Div = document.getElementById("menudivScroll_"+type);//顯示區
 				//顯示區展開
 				Div.style.height = ((ItemCount*10))+"%";
 				Div.style.backgroundColor = "#FFFCDF";
 				var menu = document.getElementById(Div.parentNode.id);//選單
-				for(var i=0;i<Data.length;i++){
-					var Item = new MenuItem(i,ItemCount,Data[i].NO);/*global MenuItem 實作於Menu.js*/
-					ItemClick(Item,Data[i],type);
+				for(var i=0;i<ItemCount;i++){
+					var Item = new MenuItem(i,ItemCount,ModelSelfArray[i][0]);/*global MenuItem 實作於Menu.js*/
+					ItemClick(Item,ModelSelfArray[i],type);
 					Div.appendChild(Item);
 				}
 				for(var i=parseInt(type)+1;i<(menu.childElementCount/2);i++){
@@ -236,8 +265,9 @@
 						else DelMenuItem(i,DivScroll);//已展開
 					});
 				}
-				for (var i = 0; i < ModelData.length; i++) {//實作陣列
-					var Div = new MenuType(ModelData[i].name,i)/*global MenuType 實作於 Menu.js*/
+				var ModelTypeArray = ModelData["Type"];
+				for (var i = 0; i < ModelTypeArray.length; i++) {//實作陣列
+					var Div = new MenuType(ModelTypeArray[i][1],i)/*global MenuType 實作於 Menu.js*/
 					var DivScroll = new MenuTypeScroll(i)/*global MenuTypeScroll 實作於 Menu.js*/
 					TypeClick(Div,DivScroll,i);//增加按鈕事件
 					menu.a.appendChild(Div);
@@ -259,13 +289,13 @@
 			}
 			
 			//牆體有關
-			function setWall(NO,x,y,z,tex,type){
+			function setWall(NO,x,y,z,type){
 				//箱子描繪
 				var geometry = new THREE.BoxGeometry( x, y, z );
 				var textureloader = new THREE.TextureLoader();
-				textureloader.load("model/tex/"+tex+".png",function(texture){
+				textureloader.load("model/tex/1.png",function(texture){
 					var material = new THREE.MeshLambertMaterial( { color: 0xDF1F1F, map: texture, transparent: true, opacity: 0.5});
-					voxel = new Wall(geometry,material,NO,type,x,y,z,tex);/*global Wall 實作於Wall.js*/
+					voxel = new Wall(geometry,material,NO,type,x,y,z,1);/*global Wall 實作於Wall.js*/
 					//擺放箱子透明
 					rollOverMesh = new THREE.Mesh( geometry, material );
 					rollOverMesh.name = "rollOverMesh";
@@ -290,7 +320,6 @@
 				SelectObj = voxel.mesh;
 			}
 			function loadWall(Data){
-				console.log(Data);
 				var geometry = new THREE.BoxGeometry( Data.Model.X, Data.Model.Y, Data.Model.Z);
 				var textureloader = new THREE.TextureLoader();
 				textureloader.load("model/tex/"+Data.Model.Tex+".png",function(texture){
@@ -306,7 +335,7 @@
 				});
 			}
 			//模型有關
-			function setObj(NO,x,y,z,tex,type){
+			function setObj(NO,x,y,z,type){
 				var onProgress = function ( xhr ) {
 					if ( xhr.lengthComputable ) {
 						var percentComplete = xhr.loaded / xhr.total * 100;
@@ -318,7 +347,7 @@
 				var mtlLoader = new THREE.MTLLoader();
 				mtlLoader.setBaseUrl( 'model/obj/'+NO+'/' );
 				mtlLoader.setPath( 'model/obj/'+NO+'/' );
-				mtlLoader.load( tex + '.mtl', function( materials ) {
+				mtlLoader.load( '1.mtl', function( materials ) {
 					materials.preload();
 					var objLoader = new THREE.OBJLoader();
 					objLoader.setMaterials( materials );
@@ -330,7 +359,7 @@
 						        node.material.transparent = true;
 						    }
 						} );
-						voxel = new Model(object.clone(),NO,type,x,y,z);/*global Model 實作於Model.js*/
+						voxel = new Model(object.clone(),NO,type,x,y,z,1);/*global Model 實作於Model.js*/
 						rollOverMesh = object.clone();
 						rollOverMesh.name = "rollOverMesh";
 						scene.add( rollOverMesh );
@@ -349,22 +378,21 @@
 				var onError = function ( xhr ) { };
 				THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader() );
 				var mtlLoader = new THREE.MTLLoader();
-				mtlLoader.setBaseUrl( 'model/obj/'+Data.NO+'/' );
-				mtlLoader.setPath( 'model/obj/'+Data.NO+'/' );
-				mtlLoader.load( Data.tex + '.mtl', function( materials ) {
+				mtlLoader.setBaseUrl( 'model/obj/'+Data[0]+'/' );
+				mtlLoader.setPath( 'model/obj/'+Data[0]+'/' );
+				mtlLoader.load( LoadData.Model.Tex + '.mtl', function( materials ) {
 					materials.preload();
 					var objLoader = new THREE.OBJLoader();
 					objLoader.setMaterials( materials );
-					objLoader.setPath( 'model/obj/'+Data.NO+'/' );
-					objLoader.load( Data.NO + '.obj', function ( object ) {
+					objLoader.setPath( 'model/obj/'+Data[0]+'/' );
+					objLoader.load( Data[0] + '.obj', function ( object ) {
 						object.traverse( function( node ) {
 						    if( node.material ) {
 						        node.material.opacity = 0.5;
 						        node.material.transparent = true;
 						    }
 						} );
-						console.log(Data);
-						voxel = new Model(object.clone(),Data.NO,LoadData.Type,Data.X,Data.Y,Data.Z);/*global Model 實作於Model.js*/
+						voxel = new Model(object.clone(),Data[0],LoadData.Type,Data[1],Data[2],Data[3],LoadData.Model.Tex);/*global Model 實作於Model.js*/
 						var Pos = new THREE.Vector3(LoadData.position.x,LoadData.position.y,LoadData.position.z);
 						voxel.addToScene(Pos);
 						voxel.mesh.rotation.y = LoadData.position.r;
@@ -470,6 +498,8 @@
 				}
 			}
 			function render() {
+				var delta = clock.getDelta();
+				if(camControls) camControls.update(delta);
 				renderer.render( scene, camera );
 			}
 			function DataOutPut(){
@@ -478,12 +508,12 @@
 					var objectData = new Object();
 					objectData.Name = objects[i].Model.Name;
 					objectData.Type = objects[i].Model.Type;
+					objectData.Model = new Object();
+					objectData.Model.Tex = objects[i].Model.Tex;
 					if(objectData.Type==0){
-						objectData.Model = new Object();
 						objectData.Model.X = objects[i].Model.X;
 						objectData.Model.Y = objects[i].Model.Y;
 						objectData.Model.Z = objects[i].Model.Z;
-						objectData.Model.Tex = objects[i].Model.Tex;
 					}
 					objectData.position = new Object();
 					objectData.position.x = objects[i].position.x;
@@ -516,12 +546,12 @@
 						//取出資料並開始解碼
 						var ObjectData = JSON.parse(reader.result);//解出JSON陣列
 						for(var i=0;i<ObjectData.length;i++){
-							var Data = ModelData[ObjectData[i].Type].Data;
 							if(ObjectData[i].Type == 0) loadWall(ObjectData[i]);
 							else {
-								for(var j=0;j<Data.length;j++){
-									if(Data[j].NO == ObjectData[i].Name){//找出目標開始新增
-										loadObj(Data[j],ObjectData[i]);
+								var ModelAllArray = ModelData["Model"];
+								for(var k=0;k<ModelAllArray.length;k++){
+									if((ModelAllArray[k][4]==(ObjectData[i].Type+1))&&(ModelAllArray[k][0]==ObjectData[i].Name)){
+										loadObj(ModelAllArray[k],ObjectData[i]);
 										break;
 									}
 								}

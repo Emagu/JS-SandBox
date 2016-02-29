@@ -31,6 +31,19 @@ function ToolBar(WindowX,WindowY){
 	this.c.id = "InFile";
 	this.c.style.backgroundColor = "#FFDDDD";
 	
+	//視角切換按鈕
+	this.d = document.createElement('div');
+	this.d.style.left = "0.5%";
+	this.d.style.top = "25%";
+	this.d.style.height = "10%";
+	this.d.style.width = "95%";
+	this.d.style.position = 'absolute';
+	this.d.id = "ScopeButton";
+	this.d.innerHTML = "切換<br>視角!";
+	this.d.style.cursor = "pointer";
+	this.d.style.backgroundColor = "#FFDDDD";
+	
 	this.a.appendChild(this.b);
 	this.a.appendChild(this.c);
+	this.a.appendChild(this.d);
 }

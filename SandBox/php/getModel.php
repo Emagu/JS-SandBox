@@ -6,18 +6,24 @@
 	$port = 3306;
 	$connect = mysqli_connect($host, $user, $pass, $db, $port)or die(mysql_error());
 	mysqli_query($connect,"SET CHARACTER SET UTF8");
+	$type = Array();
+	$model = Array();
+	$tex = Array();
 	$query  = "SELECT * FROM type";
 	$result = mysqli_query($connect, $query);
-	$data = Array();
 	while($row = mysqli_fetch_row($result)){
-		$Item = Array();
-		$query = "SELECT * FROM model where type = '$row[0]'";
-		$res = mysqli_query($connect, $query);
-		while($r = mysqli_fetch_assoc($res)){
-			array_push($Item,$r);
-		}
-		$type = Array("type"=>$row[0],"name"=>$row[1],"Data"=>$Item);
-		array_push($data,$type);
+		array_push($type,$row);
 	}
+	$query  = "SELECT * FROM model";
+	$result = mysqli_query($connect, $query);
+	while($row = mysqli_fetch_row($result)){
+		array_push($model,$row);
+	}
+	$query  = "SELECT * FROM tex";
+	$result = mysqli_query($connect, $query);
+	while($row = mysqli_fetch_row($result)){
+		array_push($tex,$row);
+	}
+	$data = Array("Type" => $type,"Model" => $model,"Tex" => $tex);
 	echo json_encode($data);
 ?>

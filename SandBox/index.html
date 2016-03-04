@@ -99,7 +99,7 @@
 				control = new Control();/*global Control 實作於Control.js*/
 					//移除按鈕事件
 					control.b.addEventListener("click",function(){
-						if(SelectObj.Model.Type == 0) control.NotSelectWall();
+						if(SelectObj.Model.Type == 0) control.NotSelect();
 						scene.remove(SelectObj);
 						objects.splice(objects.indexOf(SelectObj),1);
 						SelectObj=null;
@@ -113,7 +113,7 @@
 					control.c.addEventListener("click",function(){
 						if(SelectObj.Model.Type==0) {
 							SelectObj.material.opacity = 1;
-							control.NotSelectWall();
+							control.NotSelect();
 						}else{
 							SelectObj.traverse( function( node ) {
 								if( node.material ) node.material.opacity = 1;
@@ -124,6 +124,12 @@
 						document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 						document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 						document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+						render();
+					});
+					control.d.addEventListener("click",function(){
+						SelectObj.rotation.x += Math.PI/2;
+						SelectObj.rotation.y += Math.PI/2;
+						SelectObj.rotation.z += Math.PI/2;
 						render();
 					});
 					//可移動按鈕事件
@@ -145,15 +151,21 @@
 					});
 					//牆體編輯事件
 					control.PosXC.addEventListener("change",function(){
-						ChangeWall(parseInt(control.PosXC.value),SelectObj.Model.Y,SelectObj.Model.Z);
+						ChangeWall(parseInt(control.PosXC.value),SelectObj.Model.Y,SelectObj.Model.Z,SelectObj.Model.Tex);
 						render();
 					});
 					control.PosYC.addEventListener("change",function(){
-						ChangeWall(SelectObj.Model.X,parseInt(control.PosYC.value),SelectObj.Model.Z);
+						ChangeWall(SelectObj.Model.X,parseInt(control.PosYC.value),SelectObj.Model.Z,SelectObj.Model.Tex);
 						render();
 					});
 					control.PosZC.addEventListener("change",function(){
-						ChangeWall(SelectObj.Model.X,SelectObj.Model.Y,parseInt(control.PosZC.value));
+						ChangeWall(SelectObj.Model.X,SelectObj.Model.Y,parseInt(control.PosZC.value),SelectObj.Model.Tex);
+						render();
+					});
+					control.TexCombo.addEventListener("change",function(){
+						console.log(control.TexCombo.value);
+						if(SelectObj.Model.Type == 0) ChangeWall(SelectObj.Model.X,SelectObj.Model.Y,SelectObj.Model.Z,control.TexCombo.value);
+						else ChangeModel();
 						render();
 					});
 				container.appendChild(control.a);
@@ -287,7 +299,13 @@
 				}
 				DivScroll.style.height = "0px";
 			}
-			
+			function getTexOfModel(ModelID){
+				var TexData= new Array;
+				for(var i=0;i<ModelData.Tex.length;i++){
+					if(ModelData.Tex[i][1]==ModelID) TexData.push(ModelData.Tex[i]);
+				}
+				return TexData;
+			}
 			//牆體有關
 			function setWall(NO,x,y,z,type){
 				//箱子描繪
@@ -303,21 +321,24 @@
 					container.style.cursor = "none";
 				});
 			}
-			function ChangeWall(x,y,z){
+			function ChangeWall(x,y,z,tex){
 				//箱子描繪
 				var geometry = new THREE.BoxGeometry( x, y, z );
-				var material = SelectObj.material;
-				voxel = new Wall(geometry,material,SelectObj.Model.Name,SelectObj.Model.Type,x,y,z,SelectObj.Model.Tex);/*global Wall 實作於Wall.js*/
-				var Pos = new THREE.Vector3();
-				Pos.copy(SelectObj.position);
-				voxel.addToScene(Pos);
-				voxel.mesh.material.opacity = 0.5;
-				voxel.mesh.rotation.y = SelectObj.rotation.y;
-				scene.remove(SelectObj);
-				objects.splice(objects.indexOf(SelectObj),1);
-				scene.add( voxel.mesh );
-				objects.push( voxel.mesh );
-				SelectObj = voxel.mesh;
+				var textureloader = new THREE.TextureLoader();
+				textureloader.load("model/tex/"+tex+".png",function(texture){
+					var material = new THREE.MeshLambertMaterial( { color: 0xDF1F1F, map: texture, transparent: true, opacity: 0.5});
+					voxel = new Wall(geometry,material,SelectObj.Model.Name,SelectObj.Model.Type,x,y,z,tex);/*global Wall 實作於Wall.js*/
+					var Pos = new THREE.Vector3();
+					Pos.copy(SelectObj.position);
+					voxel.addToScene(Pos);
+					voxel.mesh.material.opacity = 0.5;
+					voxel.mesh.rotation.y = SelectObj.rotation.y;
+					scene.remove(SelectObj);
+					objects.splice(objects.indexOf(SelectObj),1);
+					scene.add( voxel.mesh );
+					objects.push( voxel.mesh );
+					SelectObj = voxel.mesh;
+				});
 			}
 			function loadWall(Data){
 				var geometry = new THREE.BoxGeometry( Data.Model.X, Data.Model.Y, Data.Model.Z);
@@ -328,6 +349,9 @@
 					voxel.mesh.rotation.y = Data.position.r;
 					var Pos = new THREE.Vector3(Data.position.x,Data.position.y,Data.position.z);
 					voxel.addToScene(Pos);
+					voxel.mesh.rotation.x = Data.rotation.x;
+					voxel.mesh.rotation.y = Data.rotation.y;
+					voxel.mesh.rotation.z = Data.rotation.z;
 					scene.add( voxel.mesh );
 					objects.push( voxel.mesh );
 					container.style.cursor = "pointer";
@@ -395,7 +419,46 @@
 						voxel = new Model(object.clone(),Data[0],LoadData.Type,Data[1],Data[2],Data[3],LoadData.Model.Tex);/*global Model 實作於Model.js*/
 						var Pos = new THREE.Vector3(LoadData.position.x,LoadData.position.y,LoadData.position.z);
 						voxel.addToScene(Pos);
-						voxel.mesh.rotation.y = LoadData.position.r;
+						voxel.mesh.rotation.x = LoadData.rotation.x;
+						voxel.mesh.rotation.y = LoadData.rotation.y;
+						voxel.mesh.rotation.z = LoadData.rotation.z;
+						scene.add( voxel.mesh );
+						objects.push( voxel.mesh );
+						container.style.cursor = "pointer";
+						render();
+					}, onProgress, onError );
+
+				});
+			}
+			function ChangeModel(tex){
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+				var onError = function ( xhr ) { };
+				THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader() );
+				var mtlLoader = new THREE.MTLLoader();
+				mtlLoader.setBaseUrl( 'model/obj/'+SelectObj.Model.Name+'/' );
+				mtlLoader.setPath( 'model/obj/'+SelectObj.Model.Name+'/' );
+				mtlLoader.load( tex + '.mtl', function( materials ) {
+					materials.preload();
+					var objLoader = new THREE.OBJLoader();
+					objLoader.setMaterials( materials );
+					objLoader.setPath( 'model/obj/'+SelectObj.Model.Name+'/' );
+					objLoader.load( SelectObj.Model.Name + '.obj', function ( object ) {
+						object.traverse( function( node ) {
+						    if( node.material ) {
+						        node.material.opacity = 0.5;
+						        node.material.transparent = true;
+						    }
+						} );
+						voxel = new Model(object.clone(),SelectObj.Model.Name,SelectObj.Model.Type,SelectObj.Model.X,SelectObj.Model.Y,SelectObj.Model.Z,tex);/*global Model 實作於Model.js*/
+						var Pos = new THREE.Vector3();
+						Pos.copy(SelectObj.position);
+						voxel.addToScene(Pos);
+						voxel.mesh.rotation.copy(SelectObj.rotation);
 						scene.add( voxel.mesh );
 						objects.push( voxel.mesh );
 						container.style.cursor = "pointer";
@@ -454,12 +517,10 @@
 							control.PosZ.value = SelectObj.position.z;
 							control.PosR.value = SelectObj.rotation.y * 180 / Math.PI;
 							if(SelectObj.Model.Type == 0){
-								control.SelectWall();
+								control.Select(SelectObj.Model,getTexOfModel(SelectObj.Model.Name));
 								SelectObj.material.opacity = 0.5;
-								control.PosXC.value = SelectObj.Model.X;
-								control.PosYC.value = SelectObj.Model.Y;
-								control.PosZC.value = SelectObj.Model.Z;
 							}else{
+								control.Select(SelectObj.Model,getTexOfModel(SelectObj.Model.Name));
 								SelectObj.traverse( function( node ) {
 									if( node.material ) node.material.opacity = 0.5;
 								} );
@@ -519,7 +580,10 @@
 					objectData.position.x = objects[i].position.x;
 					objectData.position.y = objects[i].position.y;
 					objectData.position.z = objects[i].position.z;
-					objectData.position.r = objects[i].rotation.y;//旋轉角度
+					objectData.rotation = new Object();
+					objectData.rotation.x = objects[i].rotation.x;
+					objectData.rotation.y = objects[i].rotation.y;
+					objectData.rotation.z = objects[i].rotation.z;
 					OutArray.push(objectData);
 				}
 				var jsonData = JSON.stringify(OutArray);

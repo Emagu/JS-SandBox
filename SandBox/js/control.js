@@ -3,56 +3,42 @@ function Control(){
 	this.a = document.createElement( 'div' );
 	this.a.style.position = 'absolute';
 	this.a.style.top = "0px";
-	this.a.style.width = "250px";
-	this.a.style.height = "320px";
+	this.a.style.width = "80%";
+	this.a.style.height = "100px";
 	this.a.style.backgroundColor = "#DDDCDC";
 	this.a.style.textAlign = 'center';
 	this.a.id = "Control";
 	this.a.style.display = "none";
 	//功能按鈕
-		//標題
-		var worktitle = document.createElement("P");
-		worktitle.appendChild(document.createTextNode("------物件控制台------"));
 		//載體
 		var work = document.createElement( 'div' );
-		work.style.width = "100%";
-		work.style.height = "20px";
+		work.appendChild(document.createTextNode("----物件控制台----"));
+		work.style.width = "23%";
+		work.style.height = "60px";
+		work.style.left = "1%";
+		work.style.position = 'absolute';
 		//刪除
 		this.b = document.createElement("button");
-		this.b.style.width = '40%';
 		this.b.appendChild(document.createTextNode("刪除物件"));
 		//關閉
 		this.c = document.createElement("button");
-		this.c.style.width = '40%';
 		this.c.appendChild(document.createTextNode("取消選取"));
+		//鏡像
+		this.d = document.createElement("button");
+		this.d.appendChild(document.createTextNode("鏡像模型"));
 		//串接
 		work.appendChild(this.b);
 		work.appendChild(this.c);
+		work.appendChild(this.d);
 	//物件修改
-		//標題
-		var edittitle = document.createElement("P");
-		edittitle.appendChild(document.createTextNode("----物件修改----"));
 		//載體
 		var edit = document.createElement( 'div' );
-		edit.style.width = "100%";
-		edit.style.height = "90px";
+		edit.appendChild(document.createTextNode("----物件座標----"));
+		edit.style.width = "23%";
+		edit.style.height = "60px";
+		edit.style.left = "24%";
+		edit.style.position = 'absolute';
 		//座標修改
-			//標籤載體
-			var Pos = document.createElement( 'div' );
-			Pos.style.width = "100%";
-			Pos.style.height = "40px";
-			Pos.style.top = "2.5px";
-			//左半部
-			var PosL = document.createElement( 'div' );
-			PosL.style.width = "50%";
-			PosL.style.height = "100%";
-			PosL.style.position = 'absolute';
-			//右半部
-			var PosR = document.createElement( 'div' );
-			PosR.style.width = "50%";
-			PosR.style.height = "100%";
-			PosR.style.left = "50%";
-			PosR.style.position = 'absolute';
 			//X軸標籤
 			var XLabel = document.createElement("P");
 			XLabel.appendChild(document.createTextNode("X軸:"));
@@ -61,7 +47,7 @@ function Control(){
 			this.PosX.setAttribute("max", "475");
 			this.PosX.setAttribute("min", "-475");
 			this.PosX.setAttribute("step", "10");
-			this.PosX.style.width = "50px";
+			XLabel.style.height = "23%";
 			XLabel.appendChild(this.PosX);
 			//Y軸標籤
 			var YLabel = document.createElement("P");
@@ -71,7 +57,7 @@ function Control(){
 			this.PosY.setAttribute("max", "475");
 			this.PosY.setAttribute("min", "25");
 			this.PosY.setAttribute("step", "10");
-			this.PosY.style.width = "50px";
+			YLabel.style.height = "23%";
 			YLabel.appendChild(this.PosY);
 			//Z軸標籤
 			var ZLabel = document.createElement("P");
@@ -81,7 +67,7 @@ function Control(){
 			this.PosZ.setAttribute("max", "475");
 			this.PosZ.setAttribute("min", "-475");
 			this.PosZ.setAttribute("step", "10");
-			this.PosZ.style.width = "50px";
+			ZLabel.style.height = "23%";
 			ZLabel.appendChild(this.PosZ);
 			//R軸標籤
 			var RLabel = document.createElement("P");
@@ -91,8 +77,41 @@ function Control(){
 			this.PosR.setAttribute("max", "360");
 			this.PosR.setAttribute("min", "0");
 			this.PosR.setAttribute("step", "1");
-			this.PosR.style.width = "50px";
+			RLabel.style.height = "23%";
 			RLabel.appendChild(this.PosR);
+			//串接
+			edit.appendChild(XLabel);
+			edit.appendChild(YLabel);
+			edit.appendChild(ZLabel);
+			edit.appendChild(RLabel);
+		//載體
+		var Skin = document.createElement( 'div' );
+		Skin.appendChild(document.createTextNode("----物件塗裝----"));
+		Skin.style.width = "23%";
+		Skin.style.height = "60px";
+		Skin.style.left = "49%";
+		Skin.style.position = 'absolute';
+			//純色
+			var SingleColor = document.createElement("P");
+			SingleColor.appendChild(document.createTextNode("純色:"));
+			this.ColorCombo = document.createElement("select");
+			SingleColor.appendChild(this.ColorCombo);
+			//貼圖
+			var TexColor = document.createElement("P");
+			TexColor.appendChild(document.createTextNode("貼圖:"));
+			this.TexCombo = document.createElement("select");
+			TexColor.appendChild(this.TexCombo);
+			//連接
+		Skin.appendChild(SingleColor);
+		Skin.appendChild(TexColor);
+		//載體
+		var editC = document.createElement( 'div' );
+		editC.appendChild(document.createTextNode("----物件修改----"));
+		editC.style.width = "23%";
+		editC.style.height = "60px";
+		editC.style.left = "74%";
+		editC.style.position = 'absolute';
+		//座標修改
 			//牆體調整
 			//長
 			var XCLabel = document.createElement("P");
@@ -102,7 +121,6 @@ function Control(){
 			this.PosXC.setAttribute("max", "500");
 			this.PosXC.setAttribute("min", "20");
 			this.PosXC.setAttribute("step", "10");
-			this.PosXC.style.width = "50px";
 			XCLabel.appendChild(this.PosXC);
 			//高
 			var YCLabel = document.createElement("P");
@@ -112,7 +130,6 @@ function Control(){
 			this.PosYC.setAttribute("max", "100");
 			this.PosYC.setAttribute("min", "20");
 			this.PosYC.setAttribute("step", "5");
-			this.PosYC.style.width = "50px";
 			YCLabel.appendChild(this.PosYC);
 			//寬
 			var ZCLabel = document.createElement("P");
@@ -122,31 +139,48 @@ function Control(){
 			this.PosZC.setAttribute("max", "500");
 			this.PosZC.setAttribute("min", "10");
 			this.PosZC.setAttribute("step", "10");
-			this.PosZC.style.width = "50px";
 			ZCLabel.appendChild(this.PosZC);
 			//串接
-			PosL.appendChild(XLabel);
-			PosL.appendChild(YLabel);
-			PosR.appendChild(ZLabel);
-			PosR.appendChild(RLabel);
-			Pos.appendChild(PosL);
-			Pos.appendChild(PosR);
-		edit.appendChild(Pos);
+		editC.appendChild(XCLabel);
+		editC.appendChild(YCLabel);
+		editC.appendChild(ZCLabel);
 	//串接
-		this.a.appendChild(worktitle);
 		this.a.appendChild(work);
-		this.a.appendChild(edittitle);
 		this.a.appendChild(edit);
-		this.SelectWall = function(){
-			PosL.appendChild(XCLabel);
-			PosL.appendChild(YCLabel);
-			PosR.appendChild(ZCLabel);
-			this.a.style.height = "320px";
+		this.a.appendChild(Skin);
+		this.a.appendChild(editC);
+		this.Select = function(Model,TexArray){
+			if(Model.Type == 0){
+				editC.style.display = "";
+				this.PosXC.value = Model.X;
+				this.PosYC.value = Model.Y;
+				this.PosZC.value = Model.Z;
+			}else{
+				editC.style.display = "none";
+			}
+			while (this.TexCombo.firstChild) {
+			    this.TexCombo.removeChild(this.TexCombo.firstChild);
+			}
+			while (this.ColorCombo.firstChild) {
+			    this.ColorCombo.removeChild(this.ColorCombo.firstChild);
+			}
+			for(var i=0;i<TexArray.length;i++){
+				if(TexArray[i][4]==1){
+					var ComboSelect = document.createElement("option");
+					ComboSelect.setAttribute("value",TexArray[i][2]);
+					ComboSelect.appendChild(document.createTextNode(TexArray[i][3]));
+					this.TexCombo.appendChild(ComboSelect);
+					if(i==0) this.ColorCombo.setAttribute("disabled","true");
+				}else {
+					var ComboSelect = document.createElement("option");
+					ComboSelect.setAttribute("value",TexArray[i][2]);
+					ComboSelect.appendChild(document.createTextNode(TexArray[i][3]));
+					this.ColorCombo.appendChild(ComboSelect);
+					if(i==0) this.ColorCombo.setAttribute("disabled","true");
+				}
+			}
 		};
-		this.NotSelectWall = function(){
-			PosL.removeChild(XCLabel);
-			PosL.removeChild(YCLabel);
-			PosR.removeChild(ZCLabel);
-			this.a.style.height = "240px";
+		this.NotSelect = function(){
+			editC.style.display = "none";
 		};
 }
